@@ -32,7 +32,12 @@ function getPhoto(id) { // id starts with 1
         url: `photos/${id + 1}.jpg`,
         descriptions: getRandomElementFromArray(0, descriptions.length - 1, descriptions),
         likes: getRandomInt(likesAmount.min, likesAmount.max),
-        comments: new Array(getRandomInt(commentsLength.min, commentsLength.max)).fill(null).map((_, id) => getComment(id))
+        comments: new Array(getRandomInt(commentsLength.min, commentsLength.max)).fill(null).map((_, id) => getComment(id)),
+        metadata: {
+            transform: '',
+            filter: ''
+        }
+
     }
 }
 
@@ -65,7 +70,12 @@ function createPhotoFromForm(formData, photosArray) {
         url: formData.url,
         descriptions: `${formData.hashtags} ${formData.description}`,
         likes: 0,
-        comments: []
+        comments: [],
+        metadata: {
+            transform: `scale(${formData.scale})`,
+            filter: formData.filter
+        }
+
     }
 }
 
@@ -78,8 +88,7 @@ app.use((_, res, next) => {
     next()
 })
 
-app.use(upload.array());
-app.use(express.static('public'));
+app.use(upload.none());
 
 app.get('/photos', (_, res) => {
     const photos = fs.readFileSync("photos.txt", "utf8");
