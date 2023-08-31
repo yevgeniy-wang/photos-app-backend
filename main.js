@@ -1,6 +1,10 @@
 const fs = require("fs");
 const express = require('express')
 const app = express()
+const bodyParser = require('body-parser')
+const multer = require('multer')
+const upload = multer();
+
 
 const PORT = 3000;
 
@@ -55,6 +59,16 @@ function getComment(id) { // id starts with 1
     }
 }
 
+function createPhotoFromForm(formData, photosArray) {
+    return {
+        id: photosArray.length + 1,
+        url: formData.url,
+        descriptions: `${formData.hashtags} ${formData.description}`,
+        likes: 0,
+        comments: []
+    }
+}
+
 function createArrayOfPhotos(arrayLength) {
     return new Array(arrayLength).fill(null).map((_, id) => getPhoto(id))
 }
@@ -64,12 +78,27 @@ app.use((_, res, next) => {
     next()
 })
 
+app.use(upload.array());
+app.use(express.static('public'));
+
 app.get('/photos', (_, res) => {
     const photos = fs.readFileSync("photos.txt", "utf8");
     res.setHeader('Content-Type', 'application/json').status(200).send(photos)
 })
 
-app.listen(PORT, ()=>{
+app.post('/photo', (req, res) => {
+    const photos = JSON.parse(fs.readFileSync("photos.txt", "utf8"));
+    if (req.body.url) {
+        const newPhoto = createPhotoFromForm(req.body, photos)
+
+        photos.push(newPhoto)
+        fs.writeFileSync("photos.txt", JSON.stringify(photos))
+
+        res.status(200).send(photos)
+    } else res.status(400).send('Invalid data')
+})
+
+app.listen(PORT, () => {
     fs.writeFileSync("photos.txt", JSON.stringify(createArrayOfPhotos(25)))
     console.log("Server listening on PORT", PORT);
 })
